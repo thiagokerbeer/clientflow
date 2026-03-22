@@ -1,4 +1,55 @@
-Layout e proposta visual
+# ClientFlow
+
+ClientFlow é uma aplicação full stack de cadastro e gerenciamento de clientes, desenvolvida como projeto de portfólio com foco em organização de dados, operações CRUD completas e integração real entre frontend, backend e banco de dados.
+
+## Visão do projeto
+
+O sistema foi criado para centralizar o cadastro de clientes em uma interface moderna, com visual premium e organização pensada para simular uma plataforma profissional.
+
+Com o ClientFlow é possível:
+
+- cadastrar clientes
+- listar clientes
+- editar clientes
+- excluir clientes
+- acompanhar status de clientes ativos e inativos
+- persistir dados em banco PostgreSQL
+
+## Tecnologias utilizadas
+
+### Frontend
+- React
+- Vite
+- CSS
+
+### Backend
+- Node.js
+- Express
+
+### Banco de dados e ORM
+- PostgreSQL
+- Prisma
+
+## Funcionalidades
+
+- formulário de cadastro de clientes
+- listagem em cards
+- edição de registros
+- exclusão de registros
+- status ativo/inativo
+- contadores de clientes
+- integração completa com API
+- persistência real no banco de dados
+
+## Estrutura do projeto
+
+```bash
+clientflow/
+  frontend/
+  backend/
+
+
+  Layout e proposta visual
 
 O projeto segue uma direção visual com:
 
@@ -7,6 +58,7 @@ azul frio como cor principal
 detalhes premium
 hero section destacada
 interface inspirada em plataformas modernas
+
 Como rodar o projeto localmente
 1. Clonar o repositório
 git clone URL_DO_SEU_REPOSITORIO
@@ -18,9 +70,7 @@ cd backend
 2. Instalar as dependências
 npm install
 3. Configurar o arquivo .env
-
 Crie um arquivo .env dentro da pasta backend com este formato:
-
 PORT=3001
 DATABASE_URL="SUA_URL_POSTGRESQL"
 FRONTEND_URL="http://localhost:5173"
