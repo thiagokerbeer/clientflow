@@ -14,21 +14,25 @@ function ClientCard({ client, onEdit, onDelete }) {
 
       <div className="client-info">
         <p>
-          <strong>Empresa:</strong> {client.company}
+          <strong>Empresa:</strong> {client.company || "-"}
         </p>
         <p>
-          <strong>E-mail:</strong> {client.email}
+          <strong>E-mail:</strong> {client.email || "-"}
         </p>
         <p>
-          <strong>Telefone:</strong> {client.phone}
+          <strong>Telefone:</strong> {client.phone || "-"}
         </p>
         <p>
-          <strong>Cidade:</strong> {client.city}
+          <strong>Cidade:</strong> {client.city || "-"}
         </p>
       </div>
 
       <div className="client-actions">
-        <button type="button" className="edit-button" onClick={() => onEdit(client)}>
+        <button
+          type="button"
+          className="edit-button"
+          onClick={() => onEdit(client)}
+        >
           Editar
         </button>
 

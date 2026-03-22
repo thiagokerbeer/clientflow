@@ -3,6 +3,8 @@ import "./App.css";
 import ClientForm from "./components/ClientForm";
 import ClientList from "./components/ClientList";
 
+const API_URL = `${import.meta.env.VITE_API_URL}/clients`;
+
 const initialFormData = {
   name: "",
   email: "",
@@ -12,17 +14,44 @@ const initialFormData = {
   status: "Ativo",
 };
 
+function mapApiClientToUi(client) {
+  return {
+    ...client,
+    status: client.status?.toLowerCase() === "inativo" ? "Inativo" : "Ativo",
+  };
+}
+
 function App() {
   const [formData, setFormData] = useState(initialFormData);
-  const [clients, setClients] = useState(() => {
-    const savedClients = localStorage.getItem("clientflow_clients");
-    return savedClients ? JSON.parse(savedClients) : [];
-  });
+  const [clients, setClients] = useState([]);
   const [editingClientId, setEditingClientId] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    localStorage.setItem("clientflow_clients", JSON.stringify(clients));
-  }, [clients]);
+    fetchClients();
+  }, []);
+
+  async function fetchClients() {
+    try {
+      setLoading(true);
+      setError("");
+
+      const response = await fetch(API_URL);
+
+      if (!response.ok) {
+        throw new Error("Não foi possível carregar os clientes.");
+      }
+
+      const data = await response.json();
+      setClients(data.map(mapApiClientToUi));
+    } catch (err) {
+      console.error(err);
+      setError("Erro ao buscar clientes do servidor.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   function handleChange(event) {
     const { name, value } = event.target;
@@ -33,61 +62,115 @@ function App() {
     }));
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
 
+    const cleanedData = {
+      name: formData.name.trim(),
+      email: formData.email.trim(),
+      phone: formData.phone.trim(),
+      company: formData.company.trim(),
+      city: formData.city.trim(),
+      status: formData.status.toLowerCase(),
+    };
+
     if (
-      !formData.name.trim() ||
-      !formData.email.trim() ||
-      !formData.phone.trim() ||
-      !formData.company.trim() ||
-      !formData.city.trim()
+      !cleanedData.name ||
+      !cleanedData.email ||
+      !cleanedData.phone ||
+      !cleanedData.company ||
+      !cleanedData.city
     ) {
       alert("Preencha todos os campos.");
       return;
     }
 
-    if (editingClientId) {
-      setClients((prev) =>
-        prev.map((client) =>
-          client.id === editingClientId
-            ? { ...client, ...formData }
-            : client
-        )
-      );
+    try {
+      setError("");
 
-      setEditingClientId(null);
+      if (editingClientId) {
+        const response = await fetch(`${API_URL}/${editingClientId}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(cleanedData),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || "Erro ao atualizar cliente.");
+        }
+
+        setClients((prev) =>
+          prev.map((client) =>
+            client.id === editingClientId ? mapApiClientToUi(data) : client
+          )
+        );
+
+        setEditingClientId(null);
+        setFormData(initialFormData);
+        return;
+      }
+
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(cleanedData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Erro ao cadastrar cliente.");
+      }
+
+      setClients((prev) => [mapApiClientToUi(data), ...prev]);
       setFormData(initialFormData);
-      return;
+    } catch (err) {
+      console.error("Erro ao salvar cliente:", err);
+      alert(err.message || "Erro ao salvar cliente.");
     }
-
-    const newClient = {
-      id: Date.now(),
-      ...formData,
-    };
-
-    setClients((prev) => [newClient, ...prev]);
-    setFormData(initialFormData);
   }
 
-  function handleDelete(clientId) {
-    setClients((prev) => prev.filter((client) => client.id !== clientId));
+  async function handleDelete(clientId) {
+    try {
+      setError("");
 
-    if (editingClientId === clientId) {
-      setEditingClientId(null);
-      setFormData(initialFormData);
+      const response = await fetch(`${API_URL}/${clientId}`, {
+        method: "DELETE",
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Erro ao remover cliente.");
+      }
+
+      setClients((prev) => prev.filter((client) => client.id !== clientId));
+
+      if (editingClientId === clientId) {
+        setEditingClientId(null);
+        setFormData(initialFormData);
+      }
+    } catch (err) {
+      console.error(err);
+      alert(err.message || "Erro ao excluir cliente.");
     }
   }
 
   function handleEdit(client) {
     setEditingClientId(client.id);
     setFormData({
-      name: client.name,
-      email: client.email,
-      phone: client.phone,
-      company: client.company,
-      city: client.city,
-      status: client.status,
+      name: client.name || "",
+      email: client.email || "",
+      phone: client.phone || "",
+      company: client.company || "",
+      city: client.city || "",
+      status: client.status?.toLowerCase() === "inativo" ? "Inativo" : "Ativo",
     });
   }
 
@@ -153,12 +236,17 @@ function App() {
           </aside>
         </div>
 
-        <ClientList
-          clients={clients}
-          totalClients={totalClients}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-        />
+        {loading && <p className="feedback-message">Carregando clientes...</p>}
+        {error && <p className="feedback-message error-message">{error}</p>}
+
+        {!loading && !error && (
+          <ClientList
+            clients={clients}
+            totalClients={totalClients}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
+        )}
       </div>
     </main>
   );
